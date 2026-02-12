@@ -4,76 +4,64 @@ const ctx = canvas.getContext("2d");
 canvas.width = 1280;
 canvas.height = 720;
 
-/* --- IMÁGENES --- */
-const bg = new Image();
-bg.src = "assets/portal.jpg";
+let heartsCollected = 0;
+const totalHearts = 15;
 
 const playerImg = new Image();
-playerImg.src = "assets/captor.jpg";
+playerImg.src = "captor.jpg";
 
 const heartImg = new Image();
-heartImg.src = "assets/hearts.jpg";
-
-const spikeImg = new Image();
-spikeImg.src = "assets/spike.png";
+heartImg.src = "hearts.jpg";
 
 const portalImg = new Image();
-portalImg.src = "assets/portal.jpg";
+portalImg.src = "portal.jpg";
 
-let gameWon = false;
+const spikeImg = new Image();
+spikeImg.src = "spike.png";
 
-/* --- JUGADOR --- */
 let player = {
-  x: 80,
-  y: 80,
-  size: 60,
+  x: 100,
+  y: 100,
+  size: 70,
   speed: 5
 };
 
-/* --- CHECKPOINT --- */
-let checkpoint = { x: 600, y: 350 };
-
-/* --- CORAZONES (15) --- */
 let hearts = [];
-for (let i = 0; i < 15; i++) {
+for (let i = 0; i < totalHearts; i++) {
   hearts.push({
-    x: 150 + Math.random() * 1000,
-    y: 120 + Math.random() * 500,
+    x: Math.random() * 1100 + 50,
+    y: Math.random() * 600 + 50,
+    size: 50,
     collected: false
   });
 }
 
-/* --- PINCHOS --- */
-let spikes = [
-  { x: 300, y: 200 },
-  { x: 500, y: 500 },
-  { x: 700, y: 250 },
-  { x: 900, y: 450 },
-  { x: 1100, y: 300 }
-];
-
-/* --- PORTAL FINAL --- */
-let portal = { x: 1150, y: 600, size: 80 };
-
-/* --- CONTROLES --- */
-let keys = {};
-window.addEventListener("keydown", e => keys[e.key] = true);
-window.addEventListener("keyup", e => keys[e.key] = false);
-
-/* --- COLISIONES --- */
-function collision(a, b, size = 50) {
-  return (
-    a.x < b.x + size &&
-    a.x + a.size > b.x &&
-    a.y < b.y + size &&
-    a.y + a.size > b.y
-  );
+let spikes = [];
+for (let i = 0; i < 8; i++) {
+  spikes.push({
+    x: Math.random() * 1100 + 50,
+    y: Math.random() * 600 + 50,
+    size: 60
+  });
 }
 
-/* --- UPDATE --- */
-function update() {
+let portal = {
+  x: 1150,
+  y: 600,
+  size: 90
+};
 
-  if (gameWon) return;
+let keys = {};
+document.addEventListener("keydown", e => keys[e.key] = true);
+document.addEventListener("keyup", e => keys[e.key] = false);
+
+function resetPlayer() {
+  player.x = 100;
+  player.y = 100;
+}
+
+function gameLoop() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   // Movimiento
   if (keys["ArrowUp"] || keys["w"]) player.y -= player.speed;
@@ -81,83 +69,49 @@ function update() {
   if (keys["ArrowLeft"] || keys["a"]) player.x -= player.speed;
   if (keys["ArrowRight"] || keys["d"]) player.x += player.speed;
 
-  // Limites
-  player.x = Math.max(0, Math.min(canvas.width - player.size, player.x));
-  player.y = Math.max(0, Math.min(canvas.height - player.size, player.y));
-
-  // Corazones
-  hearts.forEach(h => {
-    if (!h.collected && collision(player, h, 50)) {
-      h.collected = true;
-    }
-  });
-
-  // Pinchos (reinicio)
-  spikes.forEach(s => {
-    if (collision(player, s, 60)) {
-      player.x = checkpoint.x;
-      player.y = checkpoint.y;
-    }
-  });
-
-  // Checkpoint (cuando llega)
-  if (player.x > checkpoint.x - 20 && player.x < checkpoint.x + 20) {
-    checkpoint.x = player.x;
-    checkpoint.y = player.y;
-  }
-
-  // Portal final
-  let collectedCount = hearts.filter(h => h.collected).length;
-  if (collectedCount === 15 && collision(player, portal, portal.size)) {
-    gameWon = true;
-    setTimeout(() => {
-      window.location.href = "victory.html";
-    }, 800);
-  }
-}
-
-/* --- DRAW --- */
-function draw() {
-
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // Fondo
-  ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
-
-  // Pinchos
-  spikes.forEach(s => {
-    ctx.drawImage(spikeImg, s.x, s.y, 60, 60);
-  });
-
-  // Corazones
+  // Dibujar corazones
   hearts.forEach(h => {
     if (!h.collected) {
-      ctx.drawImage(heartImg, h.x, h.y, 50, 50);
+      ctx.drawImage(heartImg, h.x, h.y, h.size, h.size);
+
+      let dist = Math.hypot(player.x - h.x, player.y - h.y);
+      if (dist < 50) {
+        h.collected = true;
+        heartsCollected++;
+      }
     }
   });
 
-  // Portal
+  // Dibujar pinchos
+  spikes.forEach(s => {
+    ctx.drawImage(spikeImg, s.x, s.y, s.size, s.size);
+
+    let dist = Math.hypot(player.x - s.x, player.y - s.y);
+    if (dist < 50) {
+      resetPlayer();
+    }
+  });
+
+  // Dibujar portal
   ctx.drawImage(portalImg, portal.x, portal.y, portal.size, portal.size);
 
-  // Jugador
+  // Dibujar jugador
   ctx.drawImage(playerImg, player.x, player.y, player.size, player.size);
 
-  // HUD
-  let collectedCount = hearts.filter(h => h.collected).length;
+  // UI
   ctx.fillStyle = "white";
   ctx.font = "28px Arial";
-  ctx.fillText(`Corazones: ${collectedCount}/15`, 30, 50);
+  ctx.fillText(`💘 Corazones: ${heartsCollected}/${totalHearts}`, 30, 50);
 
-  if (collectedCount === 15) {
-    ctx.fillText("¡Ve al portal final!", 30, 90);
+  // Victoria
+  if (heartsCollected === totalHearts) {
+    let dist = Math.hypot(player.x - portal.x, player.y - portal.y);
+    if (dist < 80) {
+      window.location.href = "victory.jpg";
+    }
   }
+
+  requestAnimationFrame(gameLoop);
 }
 
-/* --- LOOP --- */
-function loop() {
-  update();
-  draw();
-  requestAnimationFrame(loop);
-}
-
-loop();
+gameLoop();
