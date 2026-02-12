@@ -7,18 +7,18 @@ canvas.height = 720;
 let heartsCollected = 0;
 const totalHearts = 15;
 
+/* --- IMÁGENES --- */
 const playerImg = new Image();
-playerImg.src = "captor.jpg";
-
 const heartImg = new Image();
-heartImg.src = "hearts.jpg";
-
 const portalImg = new Image();
-portalImg.src = "portal.jpg";
-
 const spikeImg = new Image();
+
+playerImg.src = "captor.jpg";
+heartImg.src = "hearts.jpg";
+portalImg.src = "portal.jpg";
 spikeImg.src = "spike.png";
 
+/* --- JUGADOR --- */
 let player = {
   x: 100,
   y: 100,
@@ -26,6 +26,7 @@ let player = {
   speed: 5
 };
 
+/* --- CORAZONES --- */
 let hearts = [];
 for (let i = 0; i < totalHearts; i++) {
   hearts.push({
@@ -36,6 +37,7 @@ for (let i = 0; i < totalHearts; i++) {
   });
 }
 
+/* --- PINCHOS --- */
 let spikes = [];
 for (let i = 0; i < 8; i++) {
   spikes.push({
@@ -45,12 +47,14 @@ for (let i = 0; i < 8; i++) {
   });
 }
 
+/* --- PORTAL FINAL --- */
 let portal = {
   x: 1150,
   y: 600,
   size: 90
 };
 
+/* --- CONTROLES --- */
 let keys = {};
 document.addEventListener("keydown", e => keys[e.key] = true);
 document.addEventListener("keyup", e => keys[e.key] = false);
@@ -60,6 +64,7 @@ function resetPlayer() {
   player.y = 100;
 }
 
+/* --- LOOP --- */
 function gameLoop() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -87,9 +92,7 @@ function gameLoop() {
     ctx.drawImage(spikeImg, s.x, s.y, s.size, s.size);
 
     let dist = Math.hypot(player.x - s.x, player.y - s.y);
-    if (dist < 50) {
-      resetPlayer();
-    }
+    if (dist < 50) resetPlayer();
   });
 
   // Dibujar portal
@@ -98,7 +101,7 @@ function gameLoop() {
   // Dibujar jugador
   ctx.drawImage(playerImg, player.x, player.y, player.size, player.size);
 
-  // UI
+  // HUD
   ctx.fillStyle = "white";
   ctx.font = "28px Arial";
   ctx.fillText(`💘 Corazones: ${heartsCollected}/${totalHearts}`, 30, 50);
@@ -114,4 +117,18 @@ function gameLoop() {
   requestAnimationFrame(gameLoop);
 }
 
-gameLoop();
+/* --- ESPERAR CARGA DE IMÁGENES --- */
+let loaded = 0;
+const totalImages = 4;
+
+function checkLoaded() {
+  loaded++;
+  if (loaded === totalImages) {
+    gameLoop();
+  }
+}
+
+playerImg.onload = checkLoaded;
+heartImg.onload = checkLoaded;
+portalImg.onload = checkLoaded;
+spikeImg.onload = checkLoaded;
