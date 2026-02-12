@@ -11,7 +11,7 @@
   <canvas id="game"></canvas>
   <div id="hud">❤️ 0/15</div>
 
-  <script src="game.js"></script>
+  <script src="./game.js"></script>
 
 </body>
 </html>
