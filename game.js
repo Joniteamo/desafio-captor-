@@ -4,179 +4,110 @@ const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-// =====================
-// IMÁGENES (assets)
-// =====================
-function load(src) {
-  const img = new Image();
-  img.src = src;
-  return img;
-}
+let heartsCollected = 0;
+const totalHearts = 15;
 
-const captorImg = load("assets/captor.jpg");
-const heartImg = load("assets/hearts.jpg");
-const spikeImg = load("assets/spike.png");
-const portalImg = load("assets/portal.jpg");
+// ===== IMÁGENES =====
+const bg = new Image();
+bg.src = "./assets/background.png";
 
-// =====================
-// JUGADOR
-// =====================
-const player = {
+const playerImg = new Image();
+playerImg.src = "./assets/captor.png";
+
+const heartImg = new Image();
+heartImg.src = "./assets/hearts.png";
+
+const portalImg = new Image();
+portalImg.src = "./assets/portal.png";
+
+const spikeImg = new Image();
+spikeImg.src = "./assets/spike.png";
+
+// ===== HUD =====
+const hud = document.getElementById("hud");
+
+// ===== JUGADOR =====
+let player = {
   x: 100,
   y: 200,
-  size: 80,
-  speed: 6,
+  w: 80,
+  h: 80,
+  speed: 6
 };
 
-// =====================
-// CORAZONES
-// =====================
-const totalHearts = 15;
-let collected = 0;
-
+// ===== OBJETOS =====
 let hearts = [];
 for (let i = 0; i < totalHearts; i++) {
   hearts.push({
-    x: Math.random() * (canvas.width - 200) + 100,
-    y: Math.random() * (canvas.height - 200) + 100,
-    size: 50,
-    taken: false,
+    x: Math.random() * (canvas.width - 60),
+    y: Math.random() * (canvas.height - 60),
+    w: 50,
+    h: 50,
+    collected: false
   });
 }
 
-// =====================
-// PINCHOS
-// =====================
-let spikes = [];
-for (let i = 0; i < 7; i++) {
-  spikes.push({
-    x: Math.random() * (canvas.width - 200) + 100,
-    y: Math.random() * (canvas.height - 200) + 100,
-    size: 70,
-  });
-}
-
-// =====================
-// PORTAL FINAL
-// =====================
-const portal = {
+// ===== PORTAL =====
+let portal = {
   x: canvas.width - 200,
   y: canvas.height / 2 - 80,
-  size: 140,
+  w: 140,
+  h: 140
 };
 
-// =====================
-// CONTROLES
-// =====================
+// ===== MOVIMIENTO =====
 let keys = {};
+window.addEventListener("keydown", e => keys[e.key] = true);
+window.addEventListener("keyup", e => keys[e.key] = false);
 
-window.addEventListener("keydown", (e) => {
-  keys[e.key.toLowerCase()] = true;
-});
-
-window.addEventListener("keyup", (e) => {
-  keys[e.key.toLowerCase()] = false;
-});
-
-// =====================
-// COLISIÓN SIMPLE
-// =====================
-function hit(a, b) {
+// ===== COLISION =====
+function collide(a, b) {
   return (
-    a.x < b.x + b.size &&
-    a.x + a.size > b.x &&
-    a.y < b.y + b.size &&
-    a.y + a.size > b.y
+    a.x < b.x + b.w &&
+    a.x + a.w > b.x &&
+    a.y < b.y + b.h &&
+    a.y + a.h > b.y
   );
 }
 
-// =====================
-// RESET
-// =====================
-function resetGame() {
-  player.x = 100;
-  player.y = 200;
-  collected = 0;
-  hearts.forEach((h) => (h.taken = false));
-}
+// ===== LOOP =====
+function gameLoop() {
 
-// =====================
-// LOOP
-// =====================
-function update() {
-  // Movimiento WASD + Flechas
-  if (keys["w"] || keys["arrowup"]) player.y -= player.speed;
-  if (keys["s"] || keys["arrowdown"]) player.y += player.speed;
-  if (keys["a"] || keys["arrowleft"]) player.x -= player.speed;
-  if (keys["d"] || keys["arrowright"]) player.x += player.speed;
+  // fondo
+  ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
 
-  // Limites pantalla
-  player.x = Math.max(0, Math.min(canvas.width - player.size, player.x));
-  player.y = Math.max(0, Math.min(canvas.height - player.size, player.y));
+  // movimiento jugador
+  if (keys["ArrowUp"] || keys["w"]) player.y -= player.speed;
+  if (keys["ArrowDown"] || keys["s"]) player.y += player.speed;
+  if (keys["ArrowLeft"] || keys["a"]) player.x -= player.speed;
+  if (keys["ArrowRight"] || keys["d"]) player.x += player.speed;
 
-  // Recolectar corazones
-  hearts.forEach((h) => {
-    if (!h.taken && hit(player, h)) {
-      h.taken = true;
-      collected++;
+  // dibujar jugador
+  ctx.drawImage(playerImg, player.x, player.y, player.w, player.h);
+
+  // corazones
+  hearts.forEach(h => {
+    if (!h.collected) {
+      ctx.drawImage(heartImg, h.x, h.y, h.w, h.h);
+
+      if (collide(player, h)) {
+        h.collected = true;
+        heartsCollected++;
+        hud.innerHTML = `❤️ ${heartsCollected}/${totalHearts}`;
+      }
     }
   });
 
-  // Pinchos reinician
-  spikes.forEach((s) => {
-    if (hit(player, s)) {
-      resetGame();
-    }
-  });
+  // portal aparece solo si juntó todos
+  if (heartsCollected >= totalHearts) {
+    ctx.drawImage(portalImg, portal.x, portal.y, portal.w, portal.h);
 
-  // Victoria
-  if (collected === totalHearts && hit(player, portal)) {
-    window.location.href = "victory.jpg";
+    if (collide(player, portal)) {
+      window.location.href = "./victory.html";
+    }
   }
+
+  requestAnimationFrame(gameLoop);
 }
 
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // Fondo oscuro estilo Fortnite
-  ctx.fillStyle = "#050505";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  // Corazones
-  hearts.forEach((h) => {
-    if (!h.taken) {
-      ctx.drawImage(heartImg, h.x, h.y, h.size, h.size);
-    }
-  });
-
-  // Pinchos estilo Fortnite (dibujados)
-spikes.forEach((s) => {
-  ctx.fillStyle = "silver";
-
-  ctx.beginPath();
-  ctx.moveTo(s.x + s.size / 2, s.y); // punta arriba
-  ctx.lineTo(s.x, s.y + s.size);     // esquina izq
-  ctx.lineTo(s.x + s.size, s.y + s.size); // esquina der
-  ctx.closePath();
-  ctx.fill();
-});
-
-  // Portal
-  ctx.drawImage(portalImg, portal.x, portal.y, portal.size, portal.size);
-
-  // Jugador captor
-  ctx.drawImage(captorImg, player.x, player.y, player.size, player.size);
-
-  // HUD
-  ctx.fillStyle = "white";
-  ctx.font = "30px Arial";
-  ctx.fillText(`💘 Corazones: ${collected}/${totalHearts}`, 20, 50);
-}
-
-function loop() {
-  update();
-  draw();
-  requestAnimationFrame(loop);
-}
-
-loop();
+gameLoop();
