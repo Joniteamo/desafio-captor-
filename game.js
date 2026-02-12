@@ -1,17 +1,14 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <title>Desafío del Captor 💘</title>
-  <link rel="stylesheet" href="style.css">
-</head>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
 
-<body>
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
 
-  <canvas id="game"></canvas>
-  <div id="hud">❤️ 0/15</div>
+ctx.fillStyle = "purple";
+ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  <script src="./game.js"></script>
+ctx.fillStyle = "white";
+ctx.font = "60px Arial";
+ctx.fillText("YA FUNCIONA 🎮💘", 100, 200);
 
-</body>
-</html>
+console.log("GAME.JS CARGADO OK");
