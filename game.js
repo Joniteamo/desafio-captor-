@@ -149,10 +149,17 @@ function draw() {
     }
   });
 
-  // Pinchos
-  spikes.forEach((s) => {
-    ctx.drawImage(spikeImg, s.x, s.y, s.size, s.size);
-  });
+  // Pinchos estilo Fortnite (dibujados)
+spikes.forEach((s) => {
+  ctx.fillStyle = "silver";
+
+  ctx.beginPath();
+  ctx.moveTo(s.x + s.size / 2, s.y); // punta arriba
+  ctx.lineTo(s.x, s.y + s.size);     // esquina izq
+  ctx.lineTo(s.x + s.size, s.y + s.size); // esquina der
+  ctx.closePath();
+  ctx.fill();
+});
 
   // Portal
   ctx.drawImage(portalImg, portal.x, portal.y, portal.size, portal.size);
