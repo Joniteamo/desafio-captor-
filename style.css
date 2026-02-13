@@ -1,18 +1,9 @@
 body {
   margin: 0;
-  background: black;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
   overflow: hidden;
-}
-
-#game-container {
-  position: relative;
+  background: black;
 }
 
 canvas {
-  border: 3px solid white;
-  background: black;
+  display: block;
 }
