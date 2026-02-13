@@ -4,9 +4,6 @@ const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-/* =========================
-   IMÁGENES
-========================= */
 const maze = new Image();
 maze.src = "./assets/maze.png";
 
@@ -22,57 +19,126 @@ spikeImg.src = "./assets/spike.png";
 const portalImg = new Image();
 portalImg.src = "./assets/portal.png";
 
-/* =========================
-   JUGADOR (3x MÁS GRANDE)
-========================= */
-let player = {
-  x: canvas.width * 0.05,
-  y: canvas.height * 0.85,
-  width: 180,
-  height: 180,
-  speed: 7,
-  lives: 100
-};
+let mazeData; // datos de pixeles
 
 /* =========================
-   RANDOM LIBRE (NO LINEAL)
+   JUGADOR PRO
 ========================= */
-function randomPosition() {
-  return {
-    x: Math.random() * (canvas.width - 200),
-    y: Math.random() * (canvas.height - 200)
-  };
+let player = {
+  x: 100,
+  y: canvas.height - 200,
+  width: 180,
+  height: 180,
+  speed: 6,
+  lives: 100,
+  invulnerable: false
+};
+
+let keys = {};
+document.addEventListener("keydown", e => keys[e.key] = true);
+document.addEventListener("keyup", e => keys[e.key] = false);
+
+/* =========================
+   DETECTAR PAREDES
+========================= */
+function isWall(x, y) {
+
+  const pixelX = Math.floor(x);
+  const pixelY = Math.floor(y);
+
+  if (
+    pixelX < 0 ||
+    pixelY < 0 ||
+    pixelX >= canvas.width ||
+    pixelY >= canvas.height
+  ) return true;
+
+  const index = (pixelY * canvas.width + pixelX) * 4;
+  const r = mazeData.data[index];
+  const g = mazeData.data[index + 1];
+  const b = mazeData.data[index + 2];
+
+  // Si es oscuro = pared
+  return (r < 80 && g < 80 && b < 80);
+}
+
+/* =========================
+   MOVIMIENTO CON COLISION
+========================= */
+function movePlayer() {
+
+  let nextX = player.x;
+  let nextY = player.y;
+
+  if (keys["ArrowUp"]) nextY -= player.speed;
+  if (keys["ArrowDown"]) nextY += player.speed;
+  if (keys["ArrowLeft"]) nextX -= player.speed;
+  if (keys["ArrowRight"]) nextX += player.speed;
+
+  // Chequear 4 esquinas
+  if (
+    !isWall(nextX, nextY) &&
+    !isWall(nextX + player.width, nextY) &&
+    !isWall(nextX, nextY + player.height) &&
+    !isWall(nextX + player.width, nextY + player.height)
+  ) {
+    player.x = nextX;
+    player.y = nextY;
+  }
+}
+
+/* =========================
+   GENERAR POSICION VALIDA
+========================= */
+function getValidPosition(size) {
+  let x, y;
+  do {
+    x = Math.random() * (canvas.width - size);
+    y = Math.random() * (canvas.height - size);
+  } while (
+    isWall(x, y) ||
+    isWall(x + size, y) ||
+    isWall(x, y + size) ||
+    isWall(x + size, y + size)
+  );
+  return { x, y };
 }
 
 /* =========================
    CORAZONES
 ========================= */
 let hearts = [];
-for (let i = 0; i < 10; i++) {
-  let pos = randomPosition();
-  hearts.push({
-    x: pos.x,
-    y: pos.y,
-    collected: false
-  });
+function generateHearts() {
+  hearts = [];
+  for (let i = 0; i < 10; i++) {
+    let pos = getValidPosition(70);
+    hearts.push({
+      x: pos.x,
+      y: pos.y,
+      collected: false
+    });
+  }
 }
 
 let collectedCount = 0;
 
 /* =========================
-   PINCHOS DESORDENADOS
+   PINCHOS
 ========================= */
 let spikes = [];
-for (let i = 0; i < 8; i++) {
-  let pos = randomPosition();
-  spikes.push({
-    x: pos.x,
-    y: pos.y
-  });
+function generateSpikes() {
+  spikes = [];
+  for (let i = 0; i < 8; i++) {
+    let pos = getValidPosition(100);
+    spikes.push({
+      x: pos.x,
+      y: pos.y
+    });
+  }
 }
 
 /* =========================
-   PORTAL 3x MÁS GRANDE
+   PORTAL FIJO EN META
 ========================= */
 let portal = {
   x: canvas.width * 0.85,
@@ -81,28 +147,12 @@ let portal = {
   height: 360
 };
 
-let keys = {};
-
-document.addEventListener("keydown", e => keys[e.key] = true);
-document.addEventListener("keyup", e => keys[e.key] = false);
-
-function movePlayer() {
-  if (keys["ArrowUp"]) player.y -= player.speed;
-  if (keys["ArrowDown"]) player.y += player.speed;
-  if (keys["ArrowLeft"]) player.x -= player.speed;
-  if (keys["ArrowRight"]) player.x += player.speed;
-
-  if (player.x < 0) player.x = 0;
-  if (player.y < 0) player.y = 0;
-  if (player.x + player.width > canvas.width)
-    player.x = canvas.width - player.width;
-  if (player.y + player.height > canvas.height)
-    player.y = canvas.height - player.height;
-}
-
+/* =========================
+   COLISIONES
+========================= */
 function checkCollisions() {
 
-  // CORAZONES
+  // Corazones
   hearts.forEach(heart => {
     if (!heart.collected &&
       player.x < heart.x + 70 &&
@@ -115,26 +165,33 @@ function checkCollisions() {
     }
   });
 
-  // PINCHOS
+  // Pinchos (con daño controlado)
   spikes.forEach(spike => {
     if (
+      !player.invulnerable &&
       player.x < spike.x + 100 &&
       player.x + player.width > spike.x &&
       player.y < spike.y + 100 &&
       player.y + player.height > spike.y
     ) {
-      player.lives -= 1;
+      player.lives -= 10;
+      player.invulnerable = true;
+
+      setTimeout(() => {
+        player.invulnerable = false;
+      }, 800);
     }
   });
 
-  // GAME OVER
+  // Game Over
   if (player.lives <= 0) {
     player.lives = 100;
     collectedCount = 0;
-    hearts.forEach(h => h.collected = false);
+    generateHearts();
+    generateSpikes();
   }
 
-  // PORTAL
+  // Portal
   if (
     collectedCount === hearts.length &&
     player.x < portal.x + portal.width &&
@@ -146,18 +203,18 @@ function checkCollisions() {
   }
 }
 
+/* =========================
+   UI
+========================= */
 function drawUI() {
 
-  // Barra corazones
   ctx.fillStyle = "white";
-  ctx.font = "30px Arial";
+  ctx.font = "28px Arial";
   ctx.fillText("Corazones: " + collectedCount + " / 10", 30, 50);
 
-  // Barra vida fondo
   ctx.fillStyle = "red";
   ctx.fillRect(30, 70, 300, 25);
 
-  // Vida actual
   ctx.fillStyle = "lime";
   ctx.fillRect(30, 70, player.lives * 3, 25);
 
@@ -165,15 +222,17 @@ function drawUI() {
   ctx.strokeRect(30, 70, 300, 25);
 }
 
+/* =========================
+   DRAW
+========================= */
 function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(maze, 0, 0, canvas.width, canvas.height);
 
   hearts.forEach(heart => {
-    if (!heart.collected) {
+    if (!heart.collected)
       ctx.drawImage(heartImg, heart.x, heart.y, 70, 70);
-    }
   });
 
   spikes.forEach(spike => {
@@ -181,11 +240,20 @@ function draw() {
   });
 
   ctx.drawImage(portalImg, portal.x, portal.y, portal.width, portal.height);
+
+  if (player.invulnerable) {
+    ctx.globalAlpha = 0.5;
+  }
+
   ctx.drawImage(captorImg, player.x, player.y, player.width, player.height);
+  ctx.globalAlpha = 1;
 
   drawUI();
 }
 
+/* =========================
+   LOOP
+========================= */
 function gameLoop() {
   movePlayer();
   checkCollisions();
@@ -193,6 +261,16 @@ function gameLoop() {
   requestAnimationFrame(gameLoop);
 }
 
+/* =========================
+   INICIO
+========================= */
 maze.onload = () => {
+
+  ctx.drawImage(maze, 0, 0, canvas.width, canvas.height);
+  mazeData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+  generateHearts();
+  generateSpikes();
+
   gameLoop();
 };
