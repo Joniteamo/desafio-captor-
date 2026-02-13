@@ -19,37 +19,59 @@ spikeImg.src = "./assets/spike.png";
 const portalImg = new Image();
 portalImg.src = "./assets/portal.png";
 
+/* =========================
+   JUGADOR
+========================= */
 let player = {
-  x: 80,
-  y: canvas.height - 120,
-  width: 80,   // MÁS GRANDE
-  height: 80,
-  speed: 6
+  x: canvas.width * 0.05,
+  y: canvas.height * 0.85,
+  width: 120,
+  height: 120,
+  speed: 7
 };
 
-// 🔥 10 CORAZONES
+/* =========================
+   FUNCION RANDOM SEGURA
+========================= */
+function randomX() {
+  return Math.random() * (canvas.width - 150);
+}
+
+function randomY() {
+  return Math.random() * (canvas.height - 150);
+}
+
+/* =========================
+   10 CORAZONES RANDOM
+========================= */
 let hearts = [];
 for (let i = 0; i < 10; i++) {
   hearts.push({
-    x: 150 + Math.random() * (canvas.width - 300),
-    y: 100 + Math.random() * (canvas.height - 300),
+    x: randomX(),
+    y: randomY(),
     collected: false
   });
 }
 
-// 🔥 PINCHOS VISIBLES
-let spikes = [
-  { x: 400, y: canvas.height - 150 },
-  { x: 500, y: canvas.height - 200 },
-  { x: 600, y: canvas.height - 150 },
-  { x: 700, y: canvas.height - 200 },
-  { x: 800, y: canvas.height - 150 }
-];
+/* =========================
+   PINCHOS RANDOM
+========================= */
+let spikes = [];
+for (let i = 0; i < 6; i++) {
+  spikes.push({
+    x: randomX(),
+    y: randomY()
+  });
+}
 
-// 🔥 PORTAL EN META (arriba derecha)
+/* =========================
+   PORTAL FIJO EN META
+========================= */
 let portal = {
-  x: canvas.width - 180,
-  y: 60
+  x: canvas.width * 0.88,
+  y: canvas.height * 0.05,
+  width: 300,
+  height: 300
 };
 
 let keys = {};
@@ -76,9 +98,9 @@ function checkCollisions() {
 
   hearts.forEach(heart => {
     if (!heart.collected &&
-      player.x < heart.x + 40 &&
+      player.x < heart.x + 60 &&
       player.x + player.width > heart.x &&
-      player.y < heart.y + 40 &&
+      player.y < heart.y + 60 &&
       player.y + player.height > heart.y
     ) {
       heart.collected = true;
@@ -88,23 +110,34 @@ function checkCollisions() {
 
   spikes.forEach(spike => {
     if (
-      player.x < spike.x + 60 &&
+      player.x < spike.x + 90 &&
       player.x + player.width > spike.x &&
-      player.y < spike.y + 60 &&
+      player.y < spike.y + 90 &&
       player.y + player.height > spike.y
     ) {
-      player.x = 80;
-      player.y = canvas.height - 120;
+      // reinicia todo y vuelve a randomizar
+      player.x = canvas.width * 0.05;
+      player.y = canvas.height * 0.85;
       collectedCount = 0;
-      hearts.forEach(h => h.collected = false);
+
+      hearts.forEach(h => {
+        h.collected = false;
+        h.x = randomX();
+        h.y = randomY();
+      });
+
+      spikes.forEach(s => {
+        s.x = randomX();
+        s.y = randomY();
+      });
     }
   });
 
   if (
     collectedCount === hearts.length &&
-    player.x < portal.x + 100 &&
+    player.x < portal.x + portal.width &&
     player.x + player.width > portal.x &&
-    player.y < portal.y + 100 &&
+    player.y < portal.y + portal.height &&
     player.y + player.height > portal.y
   ) {
     window.location.href = "./victory.html";
@@ -118,15 +151,15 @@ function draw() {
 
   hearts.forEach(heart => {
     if (!heart.collected) {
-      ctx.drawImage(heartImg, heart.x, heart.y, 40, 40);
+      ctx.drawImage(heartImg, heart.x, heart.y, 60, 60);
     }
   });
 
   spikes.forEach(spike => {
-    ctx.drawImage(spikeImg, spike.x, spike.y, 60, 60);
+    ctx.drawImage(spikeImg, spike.x, spike.y, 90, 90);
   });
 
-  ctx.drawImage(portalImg, portal.x, portal.y, 100, 100);
+  ctx.drawImage(portalImg, portal.x, portal.y, portal.width, portal.height);
   ctx.drawImage(captorImg, player.x, player.y, player.width, player.height);
 }
 
@@ -134,9 +167,4 @@ function gameLoop() {
   movePlayer();
   checkCollisions();
   draw();
-  requestAnimationFrame(gameLoop);
-}
-
-maze.onload = () => {
-  gameLoop();
-};
+  requestAnimationFrame(gameLo
