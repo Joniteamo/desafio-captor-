@@ -1,6 +1,9 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
 const maze = new Image();
 maze.src = "./assets/maze.png";
 
@@ -17,26 +20,37 @@ const portalImg = new Image();
 portalImg.src = "./assets/portal.png";
 
 let player = {
-  x: 50,
-  y: 500,
-  width: 40,
-  height: 40,
-  speed: 4
+  x: 80,
+  y: canvas.height - 120,
+  width: 80,   // MÁS GRANDE
+  height: 80,
+  speed: 6
 };
 
-let hearts = [
-  { x: 200, y: 450, collected: false },
-  { x: 500, y: 300, collected: false },
-  { x: 650, y: 150, collected: false }
-];
+// 🔥 10 CORAZONES
+let hearts = [];
+for (let i = 0; i < 10; i++) {
+  hearts.push({
+    x: 150 + Math.random() * (canvas.width - 300),
+    y: 100 + Math.random() * (canvas.height - 300),
+    collected: false
+  });
+}
 
+// 🔥 PINCHOS VISIBLES
 let spikes = [
-  { x: 300, y: 520 },
-  { x: 400, y: 520 },
-  { x: 500, y: 520 }
+  { x: 400, y: canvas.height - 150 },
+  { x: 500, y: canvas.height - 200 },
+  { x: 600, y: canvas.height - 150 },
+  { x: 700, y: canvas.height - 200 },
+  { x: 800, y: canvas.height - 150 }
 ];
 
-let portal = { x: 730, y: 50 };
+// 🔥 PORTAL EN META (arriba derecha)
+let portal = {
+  x: canvas.width - 180,
+  y: 60
+};
 
 let keys = {};
 let collectedCount = 0;
@@ -50,7 +64,6 @@ function movePlayer() {
   if (keys["ArrowLeft"]) player.x -= player.speed;
   if (keys["ArrowRight"]) player.x += player.speed;
 
-  // límites del canvas
   if (player.x < 0) player.x = 0;
   if (player.y < 0) player.y = 0;
   if (player.x + player.width > canvas.width)
@@ -61,12 +74,11 @@ function movePlayer() {
 
 function checkCollisions() {
 
-  // corazones
   hearts.forEach(heart => {
     if (!heart.collected &&
-      player.x < heart.x + 30 &&
+      player.x < heart.x + 40 &&
       player.x + player.width > heart.x &&
-      player.y < heart.y + 30 &&
+      player.y < heart.y + 40 &&
       player.y + player.height > heart.y
     ) {
       heart.collected = true;
@@ -74,27 +86,25 @@ function checkCollisions() {
     }
   });
 
-  // pinchos
   spikes.forEach(spike => {
     if (
-      player.x < spike.x + 40 &&
+      player.x < spike.x + 60 &&
       player.x + player.width > spike.x &&
-      player.y < spike.y + 40 &&
+      player.y < spike.y + 60 &&
       player.y + player.height > spike.y
     ) {
-      player.x = 50;
-      player.y = 500;
+      player.x = 80;
+      player.y = canvas.height - 120;
       collectedCount = 0;
       hearts.forEach(h => h.collected = false);
     }
   });
 
-  // portal
   if (
     collectedCount === hearts.length &&
-    player.x < portal.x + 50 &&
+    player.x < portal.x + 100 &&
     player.x + player.width > portal.x &&
-    player.y < portal.y + 50 &&
+    player.y < portal.y + 100 &&
     player.y + player.height > portal.y
   ) {
     window.location.href = "./victory.html";
@@ -108,15 +118,15 @@ function draw() {
 
   hearts.forEach(heart => {
     if (!heart.collected) {
-      ctx.drawImage(heartImg, heart.x, heart.y, 30, 30);
+      ctx.drawImage(heartImg, heart.x, heart.y, 40, 40);
     }
   });
 
   spikes.forEach(spike => {
-    ctx.drawImage(spikeImg, spike.x, spike.y, 40, 40);
+    ctx.drawImage(spikeImg, spike.x, spike.y, 60, 60);
   });
 
-  ctx.drawImage(portalImg, portal.x, portal.y, 50, 50);
+  ctx.drawImage(portalImg, portal.x, portal.y, 100, 100);
   ctx.drawImage(captorImg, player.x, player.y, player.width, player.height);
 }
 
