@@ -1,0 +1,1 @@
+const c=document.getElementById('game');const ctx=c.getContext('2d');function resize(){c.width=innerWidth;c.height=innerHeight}addEventListener('resize',resize);resize();ctx.fillStyle='white';ctx.font='24px sans-serif';ctx.fillText('Juego base cargado. Ahora subimos el juego completo.',50,80);
