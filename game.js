@@ -17,11 +17,22 @@ spikeImg.src = "assets/spike.png";
 const heartImg = new Image();
 heartImg.src = "assets/heart.png";
 
-const portalImg = new Image();
-portalImg.src = "assets/portal.png";
-
 const cetroImg = new Image();
 cetroImg.src = "assets/cetro.png";
+
+// ===== CONTROL DE CARGA =====
+let imagesLoaded = 0;
+const totalImages = 5;
+
+function imageLoaded() {
+    imagesLoaded++;
+}
+
+captorImg.onload = imageLoaded;
+mazeImg.onload = imageLoaded;
+spikeImg.onload = imageLoaded;
+heartImg.onload = imageLoaded;
+cetroImg.onload = imageLoaded;
 
 // ===== CONFIG =====
 let gravity = 0.8;
@@ -65,4 +76,36 @@ for (let i = 0; i < totalHearts; i++) {
     hearts.push({
         x: 300 + i * 180,
         y: 450 - (i % 3) * 80,
-        siz
+        size: 40,
+        collected: false
+    });
+}
+
+// ===== CETRO FINAL =====
+const cetro = {
+    x: 2600,
+    y: 420,
+    width: 80,
+    height: 80
+};
+
+// ===== RESET =====
+function resetGame() {
+    player.x = 100;
+    player.y = 400;
+    player.velocityY = 0;
+    player.jumpCount = 0;
+    player.alive = true;
+    cameraX = 0;
+    hearts.forEach(h => h.collected = false);
+    portalActive = false;
+}
+
+// ===== SALTO =====
+function jump() {
+    if (!gameStarted) {
+        gameStarted = true;
+        return;
+    }
+
+    if (player.jumpCount <
