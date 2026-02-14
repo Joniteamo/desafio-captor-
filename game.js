@@ -1,7 +1,6 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-// PANTALLA COMPLETA
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
@@ -18,46 +17,38 @@ heart.src = "assets/heart.png";
 const maze = new Image();
 maze.src = "assets/maze.png";
 
-// JUGADOR (2 VECES MAS GRANDE)
+// CONFIGURACION GD
+const groundHeight = 120;
+const gravity = 1;
+const jumpForce = -22;
+const speed = 8;
+
+// JUGADOR
 let player = {
-  x: 200,
-  y: canvas.height - 200,
-  width: 120,
-  height: 120,
+  x: canvas.width * 0.2,
+  y: canvas.height - groundHeight - 140,
+  width: 140,
+  height: 140,
   velocityY: 0,
-  gravity: 0.8,
-  jump: -18,
   grounded: true
 };
 
 let spikes = [];
 let hearts = [];
-let backgroundX = 0;
-let speed = 6;
 let heartCount = 0;
 let gameStarted = false;
+let cameraX = 0;
 
 // CREAR OBSTACULOS
 function createSpike() {
   spikes.push({
-    x: canvas.width,
-    y: canvas.height - 100,
-    width: 60,
-    height: 60
+    x: canvas.width + cameraX,
+    y: canvas.height - groundHeight - 70,
+    size: 70
   });
 }
 
-function createHeart() {
-  hearts.push({
-    x: canvas.width,
-    y: canvas.height - 250,
-    width: 50,
-    height: 50
-  });
-}
-
-setInterval(createSpike, 2000);
-setInterval(createHeart, 4000);
+setInterval(createSpike, 1500);
 
 // CONTROLES
 document.addEventListener("keydown", (e) => {
@@ -65,30 +56,30 @@ document.addEventListener("keydown", (e) => {
     if (!gameStarted) gameStarted = true;
 
     if (player.grounded) {
-      player.velocityY = player.jump;
+      player.velocityY = jumpForce;
       player.grounded = false;
     }
   }
 });
 
-// COLISION
-function collision(a, b) {
+// COLISION EXACTA
+function isColliding(a, b) {
   return (
-    a.x < b.x + b.width &&
-    a.x + a.width > b.x &&
-    a.y < b.y + b.height &&
+    a.x < b.x - cameraX + b.size &&
+    a.x + a.width > b.x - cameraX &&
+    a.y < b.y + b.size &&
     a.y + a.height > b.y
   );
 }
 
 // REINICIAR
 function resetGame() {
-  player.y = canvas.height - 200;
-  player.velocityY = 0;
+  cameraX = 0;
   spikes = [];
-  hearts = [];
   heartCount = 0;
-  backgroundX = 0;
+  player.y = canvas.height - groundHeight - 140;
+  player.velocityY = 0;
+  player.grounded = true;
   gameStarted = false;
 }
 
@@ -96,65 +87,7 @@ function resetGame() {
 function gameLoop() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // FONDO SIN DEFORMAR (cubrir pantalla)
-  ctx.drawImage(maze, backgroundX, 0, canvas.width, canvas.height);
-  ctx.drawImage(maze, backgroundX + canvas.width, 0, canvas.width, canvas.height);
+  // FONDO TIPO GD (CAMARA)
+  ctx.drawImage(maze, -cameraX %
 
-  if (gameStarted) {
-    backgroundX -= speed;
-    if (backgroundX <= -canvas.width) backgroundX = 0;
-
-    // GRAVEDAD
-    player.velocityY += player.gravity;
-    player.y += player.velocityY;
-
-    if (player.y >= canvas.height - 200) {
-      player.y = canvas.height - 200;
-      player.grounded = true;
-    }
-
-    // SPIKES
-    spikes.forEach((s, index) => {
-      s.x -= speed;
-      ctx.drawImage(spike, s.x, s.y, s.width, s.height);
-
-      if (collision(player, s)) {
-        resetGame();
-      }
-
-      if (s.x + s.width < 0) spikes.splice(index, 1);
-    });
-
-    // HEARTS
-    hearts.forEach((h, index) => {
-      h.x -= speed;
-      ctx.drawImage(heart, h.x, h.y, h.width, h.height);
-
-      if (collision(player, h)) {
-        heartCount++;
-        hearts.splice(index, 1);
-      }
-
-      if (h.x + h.width < 0) hearts.splice(index, 1);
-    });
-  }
-
-  // DIBUJAR JUGADOR
-  ctx.drawImage(captor, player.x, player.y, player.width, player.height);
-
-  // CONTADOR DE CORAZONES
-  ctx.fillStyle = "white";
-  ctx.font = "30px Arial";
-  ctx.fillText("❤️ x " + heartCount, 40, 60);
-
-  // CARTEL INICIO
-  if (!gameStarted) {
-    ctx.fillStyle = "white";
-    ctx.font = "40px Arial";
-    ctx.fillText("Presiona ESPACIO para comenzar", canvas.width / 2 - 300, canvas.height / 2);
-  }
-
-  requestAnimationFrame(gameLoop);
-}
-
-gameLoop();
+            
