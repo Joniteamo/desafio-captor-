@@ -1,224 +1,162 @@
-const canvas = document.getElementById("game");
+const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+canvas.width = 800;
+canvas.height = 400;
 
-// ===== IMÁGENES =====
+// IMAGENES
 const captorImg = new Image();
-captorImg.src = "./assets/captor.png";
-
-const mazeImg = new Image();
-mazeImg.src = "./assets/maze.png";
+captorImg.src = "assets/captor.png";
 
 const spikeImg = new Image();
-spikeImg.src = "./assets/spike.png";
+spikeImg.src = "assets/spike.png";
 
 const heartImg = new Image();
-heartImg.src = "./assets/heart.png";
+heartImg.src = "assets/heart.png";
 
-const cetroImg = new Image();
-cetroImg.src = "./assets/cetro.png";
+const mazeImg = new Image();
+mazeImg.src = "assets/maze.png";
 
-// ===== CONFIG =====
-let gravity = 0.8;
-let gameStarted = false;
-let cameraX = 0;
-let totalHearts = 14;
-let portalActive = false;
+const portalImg = new Image();
+portalImg.src = "assets/portal.png";
 
-// ===== PLAYER =====
-const player = {
-    x: 100,
-    y: 400,
-    width: 70,
-    height: 70,
-    velocityY: 0,
-    jumpCount: 0,
-    maxJumps: 2,
-    speed: 5,
-    alive: true
+// JUGADOR
+let player = {
+  x: 100,
+  y: 300,
+  width: 50,
+  height: 50,
+  velocityY: 0,
+  gravity: 0.6,
+  jumpPower: -12,
+  grounded: true
 };
 
-// ===== PLATAFORMAS =====
-const platforms = [
-    { x: 0, y: 500, width: 3000, height: 50 },
-    { x: 600, y: 400, width: 200, height: 20 },
-    { x: 950, y: 350, width: 200, height: 20 },
-    { x: 1350, y: 300, width: 200, height: 20 },
-    { x: 1750, y: 450, width: 300, height: 20 }
-];
-
-// ===== PINCHES =====
-const spikes = [
-    { x: 500, y: 470, width: 50, height: 30 },
-    { x: 1200, y: 470, width: 50, height: 30 },
-    { x: 1600, y: 470, width: 50, height: 30 }
-];
-
-// ===== CORAZONES =====
+// VARIABLES
+let spikes = [];
 let hearts = [];
-for (let i = 0; i < totalHearts; i++) {
-    hearts.push({
-        x: 300 + i * 180,
-        y: 450 - (i % 3) * 80,
-        size: 40,
-        collected: false
-    });
+let score = 0;
+let gameStarted = false;
+let backgroundX = 0;
+let speed = 4;
+
+// CREAR OBSTACULOS
+function spawnSpike() {
+  spikes.push({
+    x: canvas.width,
+    y: 330,
+    width: 40,
+    height: 40
+  });
 }
 
-// ===== CETRO FINAL =====
-const cetro = {
-    x: 2600,
-    y: 420,
-    width: 80,
-    height: 80
-};
-
-function resetGame() {
-    player.x = 100;
-    player.y = 400;
-    player.velocityY = 0;
-    player.jumpCount = 0;
-    player.alive = true;
-    cameraX = 0;
-    hearts.forEach(h => h.collected = false);
-    portalActive = false;
+function spawnHeart() {
+  hearts.push({
+    x: canvas.width,
+    y: 250,
+    width: 30,
+    height: 30
+  });
 }
 
-function jump() {
-    if (!gameStarted) {
-        gameStarted = true;
-        return;
-    }
+setInterval(spawnSpike, 2000);
+setInterval(spawnHeart, 5000);
 
-    if (player.jumpCount < player.maxJumps) {
-        player.velocityY = -15;
-        player.jumpCount++;
-    }
-}
-
+// CONTROLES
 document.addEventListener("keydown", function(e) {
-    if (e.code === "Space") {
-        jump();
+  if (e.code === "Space") {
+    if (!gameStarted) {
+      gameStarted = true;
     }
+    if (player.grounded) {
+      player.velocityY = player.jumpPower;
+      player.grounded = false;
+    }
+  }
 });
 
-canvas.addEventListener("click", function() {
-    jump();
-});
-
-function update() {
-    if (!gameStarted || !player.alive) return;
-
-    player.velocityY += gravity;
-    player.y += player.velocityY;
-    player.x += player.speed;
-
-    // Plataformas
-    platforms.forEach(function(platform) {
-        if (
-            player.x < platform.x + platform.width &&
-            player.x + player.width > platform.x &&
-            player.y + player.height <= platform.y + 10 &&
-            player.y + player.height >= platform.y
-        ) {
-            player.y = platform.y - player.height;
-            player.velocityY = 0;
-            player.jumpCount = 0;
-        }
-    });
-
-    // Pinches
-    spikes.forEach(function(spike) {
-        if (
-            player.x < spike.x + spike.width &&
-            player.x + player.width > spike.x &&
-            player.y < spike.y + spike.height &&
-            player.y + player.height > spike.y
-        ) {
-            player.alive = false;
-            setTimeout(resetGame, 1000);
-        }
-    });
-
-    // Corazones
-    hearts.forEach(function(heart) {
-        if (!heart.collected &&
-            player.x < heart.x + heart.size &&
-            player.x + player.width > heart.x &&
-            player.y < heart.y + heart.size &&
-            player.y + player.height > heart.y
-        ) {
-            heart.collected = true;
-        }
-    });
-
-    if (hearts.filter(function(h){ return h.collected; }).length === totalHearts) {
-        portalActive = true;
-    }
-
-    // Cetro
-    if (portalActive &&
-        player.x < cetro.x + cetro.width &&
-        player.x + player.width > cetro.x &&
-        player.y < cetro.y + cetro.height &&
-        player.y + player.height > cetro.y
-    ) {
-        window.location.href = "victory.html";
-    }
-
-    cameraX += ((player.x - canvas.width / 3) - cameraX) * 0.08;
+// DETECCION COLISION
+function collision(a, b) {
+  return (
+    a.x < b.x + b.width &&
+    a.x + a.width > b.x &&
+    a.y < b.y + b.height &&
+    a.y + a.height > b.y
+  );
 }
 
-function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+// GAME LOOP
+function update() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    ctx.drawImage(mazeImg, 0, 0, canvas.width, canvas.height);
+  // FONDO
+  ctx.drawImage(mazeImg, backgroundX, 0, canvas.width, canvas.height);
+  ctx.drawImage(mazeImg, backgroundX + canvas.width, 0, canvas.width, canvas.height);
 
-    ctx.save();
-    ctx.translate(-cameraX, 0);
-
-    spikes.forEach(function(s) {
-        ctx.drawImage(spikeImg, s.x, s.y, s.width, s.height);
-    });
-
-    hearts.forEach(function(heart) {
-        if (!heart.collected) {
-            ctx.drawImage(heartImg, heart.x, heart.y, heart.size, heart.size);
-        }
-    });
-
-    if (portalActive) {
-        ctx.drawImage(cetroImg, cetro.x, cetro.y, cetro.width, cetro.height);
+  if (gameStarted) {
+    backgroundX -= speed;
+    if (backgroundX <= -canvas.width) {
+      backgroundX = 0;
     }
 
-    ctx.drawImage(captorImg, player.x, player.y, player.width, player.height);
+    // GRAVEDAD
+    player.velocityY += player.gravity;
+    player.y += player.velocityY;
 
-    ctx.restore();
+    if (player.y >= 300) {
+      player.y = 300;
+      player.grounded = true;
+    }
 
+    // MOVER SPIKES
+    spikes.forEach((spike, index) => {
+      spike.x -= speed;
+      ctx.drawImage(spikeImg, spike.x, spike.y, spike.width, spike.height);
+
+      if (collision(player, spike)) {
+        alert("Perdiste!");
+        location.reload();
+      }
+
+      if (spike.x + spike.width < 0) {
+        spikes.splice(index, 1);
+      }
+    });
+
+    // MOVER HEARTS
+    hearts.forEach((heart, index) => {
+      heart.x -= speed;
+      ctx.drawImage(heartImg, heart.x, heart.y, heart.width, heart.height);
+
+      if (collision(player, heart)) {
+        score += 10;
+        hearts.splice(index, 1);
+      }
+
+      if (heart.x + heart.width < 0) {
+        hearts.splice(index, 1);
+      }
+    });
+
+    score++;
+  }
+
+  // DIBUJAR JUGADOR
+  ctx.drawImage(captorImg, player.x, player.y, player.width, player.height);
+
+  // SCORE
+  ctx.fillStyle = "white";
+  ctx.font = "20px Arial";
+  ctx.fillText("Puntaje: " + score, 20, 30);
+
+  // CARTEL INICIO
+  if (!gameStarted) {
     ctx.fillStyle = "white";
     ctx.font = "30px Arial";
-    ctx.fillText(
-        "❤️ " + hearts.filter(function(h){ return h.collected; }).length + " / " + totalHearts,
-        30,
-        50
-    );
+    ctx.fillText("Presiona ESPACIO para comenzar", 200, 200);
+  }
 
-    if (!gameStarted) {
-        ctx.font = "50px Arial";
-        ctx.fillText(
-            "TOCÁ O PRESIONÁ ESPACIO PARA COMENZAR",
-            canvas.width / 2 - 450,
-            canvas.height / 2
-        );
-    }
+  requestAnimationFrame(update);
 }
 
-function loop() {
-    update();
-    draw();
-    requestAnimationFrame(loop);
-}
-
-loop();
+update();
