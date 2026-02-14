@@ -1,56 +1,52 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-canvas.width = 800;
-canvas.height = 400;
+canvas.width = 900;
+canvas.height = 450;
 
-// IMAGENES
-const captorImg = new Image();
-captorImg.src = "assets/captor.png";
+// CARGAR IMAGENES
+const captor = new Image();
+captor.src = "assets/captor.png";
 
-const spikeImg = new Image();
-spikeImg.src = "assets/spike.png";
+const spike = new Image();
+spike.src = "assets/spike.png";
 
-const heartImg = new Image();
-heartImg.src = "assets/heart.png";
+const heart = new Image();
+heart.src = "assets/heart.png";
 
-const mazeImg = new Image();
-mazeImg.src = "assets/maze.png";
-
-const portalImg = new Image();
-portalImg.src = "assets/portal.png";
+const maze = new Image();
+maze.src = "assets/maze.png";
 
 // JUGADOR
 let player = {
-  x: 100,
-  y: 300,
-  width: 50,
-  height: 50,
+  x: 150,
+  y: 330,
+  width: 60,
+  height: 60,
   velocityY: 0,
   gravity: 0.6,
-  jumpPower: -12,
+  jump: -13,
   grounded: true
 };
 
-// VARIABLES
 let spikes = [];
 let hearts = [];
-let score = 0;
-let gameStarted = false;
 let backgroundX = 0;
 let speed = 4;
+let score = 0;
+let gameStarted = false;
 
 // CREAR OBSTACULOS
-function spawnSpike() {
+function createSpike() {
   spikes.push({
     x: canvas.width,
-    y: 330,
+    y: 360,
     width: 40,
     height: 40
   });
 }
 
-function spawnHeart() {
+function createHeart() {
   hearts.push({
     x: canvas.width,
     y: 250,
@@ -59,23 +55,22 @@ function spawnHeart() {
   });
 }
 
-setInterval(spawnSpike, 2000);
-setInterval(spawnHeart, 5000);
+setInterval(createSpike, 2000);
+setInterval(createHeart, 5000);
 
 // CONTROLES
-document.addEventListener("keydown", function(e) {
+document.addEventListener("keydown", (e) => {
   if (e.code === "Space") {
-    if (!gameStarted) {
-      gameStarted = true;
-    }
+    if (!gameStarted) gameStarted = true;
+
     if (player.grounded) {
-      player.velocityY = player.jumpPower;
+      player.velocityY = player.jump;
       player.grounded = false;
     }
   }
 });
 
-// DETECCION COLISION
+// COLISION
 function collision(a, b) {
   return (
     a.x < b.x + b.width &&
@@ -85,13 +80,13 @@ function collision(a, b) {
   );
 }
 
-// GAME LOOP
-function update() {
+// LOOP
+function gameLoop() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   // FONDO
-  ctx.drawImage(mazeImg, backgroundX, 0, canvas.width, canvas.height);
-  ctx.drawImage(mazeImg, backgroundX + canvas.width, 0, canvas.width, canvas.height);
+  ctx.drawImage(maze, backgroundX, 0, canvas.width, canvas.height);
+  ctx.drawImage(maze, backgroundX + canvas.width, 0, canvas.width, canvas.height);
 
   if (gameStarted) {
     backgroundX -= speed;
@@ -103,46 +98,42 @@ function update() {
     player.velocityY += player.gravity;
     player.y += player.velocityY;
 
-    if (player.y >= 300) {
-      player.y = 300;
+    if (player.y >= 330) {
+      player.y = 330;
       player.grounded = true;
     }
 
-    // MOVER SPIKES
-    spikes.forEach((spike, index) => {
-      spike.x -= speed;
-      ctx.drawImage(spikeImg, spike.x, spike.y, spike.width, spike.height);
+    // SPIKES
+    spikes.forEach((s, index) => {
+      s.x -= speed;
+      ctx.drawImage(spike, s.x, s.y, s.width, s.height);
 
-      if (collision(player, spike)) {
+      if (collision(player, s)) {
         alert("Perdiste!");
         location.reload();
       }
 
-      if (spike.x + spike.width < 0) {
-        spikes.splice(index, 1);
-      }
+      if (s.x + s.width < 0) spikes.splice(index, 1);
     });
 
-    // MOVER HEARTS
-    hearts.forEach((heart, index) => {
-      heart.x -= speed;
-      ctx.drawImage(heartImg, heart.x, heart.y, heart.width, heart.height);
+    // HEARTS
+    hearts.forEach((h, index) => {
+      h.x -= speed;
+      ctx.drawImage(heart, h.x, h.y, h.width, h.height);
 
-      if (collision(player, heart)) {
+      if (collision(player, h)) {
         score += 10;
         hearts.splice(index, 1);
       }
 
-      if (heart.x + heart.width < 0) {
-        hearts.splice(index, 1);
-      }
+      if (h.x + h.width < 0) hearts.splice(index, 1);
     });
 
     score++;
   }
 
   // DIBUJAR JUGADOR
-  ctx.drawImage(captorImg, player.x, player.y, player.width, player.height);
+  ctx.drawImage(captor, player.x, player.y, player.width, player.height);
 
   // SCORE
   ctx.fillStyle = "white";
@@ -153,10 +144,10 @@ function update() {
   if (!gameStarted) {
     ctx.fillStyle = "white";
     ctx.font = "30px Arial";
-    ctx.fillText("Presiona ESPACIO para comenzar", 200, 200);
+    ctx.fillText("Presiona ESPACIO para comenzar", 250, 200);
   }
 
-  requestAnimationFrame(update);
+  requestAnimationFrame(gameLoop);
 }
 
-update();
+gameLoop();
