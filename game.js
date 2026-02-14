@@ -6,33 +6,19 @@ canvas.height = window.innerHeight;
 
 // ===== IMÁGENES =====
 const captorImg = new Image();
-captorImg.src = "assets/captor.png";
+captorImg.src = "./assets/captor.png";
 
 const mazeImg = new Image();
-mazeImg.src = "assets/maze.png";
+mazeImg.src = "./assets/maze.png";
 
 const spikeImg = new Image();
-spikeImg.src = "assets/spike.png";
+spikeImg.src = "./assets/spike.png";
 
 const heartImg = new Image();
-heartImg.src = "assets/heart.png";
+heartImg.src = "./assets/heart.png";
 
 const cetroImg = new Image();
-cetroImg.src = "assets/cetro.png";
-
-// ===== CONTROL DE CARGA =====
-let imagesLoaded = 0;
-const totalImages = 5;
-
-function imageLoaded() {
-    imagesLoaded++;
-}
-
-captorImg.onload = imageLoaded;
-mazeImg.onload = imageLoaded;
-spikeImg.onload = imageLoaded;
-heartImg.onload = imageLoaded;
-cetroImg.onload = imageLoaded;
+cetroImg.src = "./assets/cetro.png";
 
 // ===== CONFIG =====
 let gravity = 0.8;
@@ -89,7 +75,6 @@ const cetro = {
     height: 80
 };
 
-// ===== RESET =====
 function resetGame() {
     player.x = 100;
     player.y = 400;
@@ -101,11 +86,34 @@ function resetGame() {
     portalActive = false;
 }
 
-// ===== SALTO =====
 function jump() {
     if (!gameStarted) {
         gameStarted = true;
         return;
     }
 
-    if (player.jumpCount <
+    if (player.jumpCount < player.maxJumps) {
+        player.velocityY = -15;
+        player.jumpCount++;
+    }
+}
+
+document.addEventListener("keydown", e => {
+    if (e.code === "Space") jump();
+});
+
+canvas.addEventListener("click", jump);
+
+function update() {
+    if (!gameStarted || !player.alive) return;
+
+    player.velocityY += gravity;
+    player.y += player.velocityY;
+    player.x += player.speed;
+
+    // Plataformas
+    platforms.forEach(platform => {
+        if (
+            player.x < platform.x + platform.width &&
+            player.x + player.width > platform.x &&
+            player.y + player
