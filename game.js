@@ -98,11 +98,15 @@ function jump() {
     }
 }
 
-document.addEventListener("keydown", e => {
-    if (e.code === "Space") jump();
+document.addEventListener("keydown", function(e) {
+    if (e.code === "Space") {
+        jump();
+    }
 });
 
-canvas.addEventListener("click", jump);
+canvas.addEventListener("click", function() {
+    jump();
+});
 
 function update() {
     if (!gameStarted || !player.alive) return;
@@ -112,8 +116,109 @@ function update() {
     player.x += player.speed;
 
     // Plataformas
-    platforms.forEach(platform => {
+    platforms.forEach(function(platform) {
         if (
             player.x < platform.x + platform.width &&
             player.x + player.width > platform.x &&
-            player.y + player
+            player.y + player.height <= platform.y + 10 &&
+            player.y + player.height >= platform.y
+        ) {
+            player.y = platform.y - player.height;
+            player.velocityY = 0;
+            player.jumpCount = 0;
+        }
+    });
+
+    // Pinches
+    spikes.forEach(function(spike) {
+        if (
+            player.x < spike.x + spike.width &&
+            player.x + player.width > spike.x &&
+            player.y < spike.y + spike.height &&
+            player.y + player.height > spike.y
+        ) {
+            player.alive = false;
+            setTimeout(resetGame, 1000);
+        }
+    });
+
+    // Corazones
+    hearts.forEach(function(heart) {
+        if (!heart.collected &&
+            player.x < heart.x + heart.size &&
+            player.x + player.width > heart.x &&
+            player.y < heart.y + heart.size &&
+            player.y + player.height > heart.y
+        ) {
+            heart.collected = true;
+        }
+    });
+
+    if (hearts.filter(function(h){ return h.collected; }).length === totalHearts) {
+        portalActive = true;
+    }
+
+    // Cetro
+    if (portalActive &&
+        player.x < cetro.x + cetro.width &&
+        player.x + player.width > cetro.x &&
+        player.y < cetro.y + cetro.height &&
+        player.y + player.height > cetro.y
+    ) {
+        window.location.href = "victory.html";
+    }
+
+    cameraX += ((player.x - canvas.width / 3) - cameraX) * 0.08;
+}
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.drawImage(mazeImg, 0, 0, canvas.width, canvas.height);
+
+    ctx.save();
+    ctx.translate(-cameraX, 0);
+
+    spikes.forEach(function(s) {
+        ctx.drawImage(spikeImg, s.x, s.y, s.width, s.height);
+    });
+
+    hearts.forEach(function(heart) {
+        if (!heart.collected) {
+            ctx.drawImage(heartImg, heart.x, heart.y, heart.size, heart.size);
+        }
+    });
+
+    if (portalActive) {
+        ctx.drawImage(cetroImg, cetro.x, cetro.y, cetro.width, cetro.height);
+    }
+
+    ctx.drawImage(captorImg, player.x, player.y, player.width, player.height);
+
+    ctx.restore();
+
+    ctx.fillStyle = "white";
+    ctx.font = "30px Arial";
+    ctx.fillText(
+        "❤️ " + hearts.filter(function(h){ return h.collected; }).length + " / " + totalHearts,
+        30,
+        50
+    );
+
+    if (!gameStarted) {
+        ctx.font = "50px Arial";
+        ctx.fillText(
+            "TOCÁ O PRESIONÁ ESPACIO PARA COMENZAR",
+            canvas.width / 2 - 450,
+            canvas.height / 2
+        );
+    }
+}
+
+function loop() {
+    update();
+    draw();
+    requestAnimationFrame(loop);
+}
+
+loop();
